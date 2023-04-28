@@ -56,6 +56,14 @@ private:
     void setWordsCount(int value);
     void setWordsPerSec(int value);
 
+signals:
+    void fileChanged();
+    void stateChanged();
+    void errorChanged();
+    void progressChanged();
+    void wordsCountChanged();
+    void wordsPerSecChanged();
+
 private:
     QString m_error;
     float m_progress{0};
@@ -69,12 +77,4 @@ private:
 
     bool m_terminated{false};
     State m_state{State::Stopped};
-
-signals:
-    void fileChanged();
-    void stateChanged();
-    void errorChanged();
-    void progressChanged();
-    void wordsCountChanged();
-    void wordsPerSecChanged();
 };
