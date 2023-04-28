@@ -2,6 +2,14 @@
 
 namespace
 {
+enum Roles
+{
+    Word = Qt::UserRole,
+    HtmlWord,
+    Count,
+    Percent
+};
+
 const float cMinPerc = 0.1;
 const int cDefaultCount = 15;
 
@@ -120,7 +128,7 @@ void Model::handle(const QString& word, int count)
             row = m_items.size();
 
             beginInsertRows({}, row, row);
-            m_items.append({ word, count });
+            m_items.append({ count, word });
             m_rows[word] = row;
             endInsertRows();
         }

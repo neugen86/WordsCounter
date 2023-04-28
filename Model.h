@@ -7,20 +7,6 @@ class Model : public QAbstractListModel
 {
     Q_OBJECT
 
-    enum Roles
-    {
-        Word = Qt::UserRole,
-        HtmlWord,
-        Count,
-        Percent
-    };
-
-    struct Item
-    {
-        QString word;
-        int count = 0;
-    };
-
     Q_PROPERTY(int maxCount READ maxCount WRITE setMaxCount NOTIFY maxCountChanged)
 
 public:
@@ -45,6 +31,12 @@ signals:
     void needMoreWords();
 
 private:
+    struct Item
+    {
+        int count{0};
+        QString word;
+    };
+
     float m_ratio{1};
     int m_maxCount{0};
     QList<Item> m_items;
