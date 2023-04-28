@@ -57,7 +57,7 @@ Window {
                 implicitWidth: 100
 
                 text: controller.state !== Controller.Running ? "Start" : "Pause"
-                enabled: controller.file.length > 0 && controller.error.length === 0
+                enabled: controller.file.length > 0
 
                 onClicked: {
                     controller.startPause()
@@ -88,9 +88,11 @@ Window {
             Layout.fillWidth: true
 
             Slider {
+                id: slider
+
                 Layout.fillWidth: true
 
-                to: controller.wordsCount
+                to: 100
                 stepSize: 1
 
                 value: controller.model.maxCount
@@ -109,7 +111,7 @@ Window {
 
             Text {
                 rightPadding: 4
-                text: `${controller.model.maxCount} / ${controller.wordsCount}`
+                text: `${controller.model.maxCount} / ${slider.to}`
             }
         }
 

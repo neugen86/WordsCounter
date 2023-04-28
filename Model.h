@@ -12,7 +12,7 @@ class Model : public QAbstractListModel
 public:
     explicit Model(QObject* parent = nullptr);
 
-    QHash<int,QByteArray> roleNames() const override;
+    QHash<int, QByteArray> roleNames() const override;
     int rowCount(const QModelIndex& parent = QModelIndex()) const override;
     QVariant data(const QModelIndex& index, int role = Qt::DisplayRole) const override;
 
@@ -41,5 +41,4 @@ private:
     int m_maxCount{0};
     QList<Item> m_items;
     QHash<QString, int> m_rows;
-
 };

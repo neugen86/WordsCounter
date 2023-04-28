@@ -1,9 +1,9 @@
 #pragma once
 
 #include <QHash>
+#include <QMutex>
 #include <QString>
 #include <QObject>
-#include <QMutex>
 #include <QAtomicInt>
 #include <QSemaphore>
 #include <QWaitCondition>
@@ -12,10 +12,8 @@ struct ReaderData
 {
     QString word;
     int count{0};
-    int totalCount{0};
     int wordsPerSec{0};
     float totalProgress{0};
-
 };
 
 
@@ -46,5 +44,4 @@ public:
 signals:
     void dataChanged(const ReaderData& data);
     void finished(const QString& error = {});
-
 };

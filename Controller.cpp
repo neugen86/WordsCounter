@@ -9,7 +9,7 @@ Controller::Controller(QObject* parent)
 {
     connect(&m_model, &Model::needMoreWords, this, [this]()
     {
-        if (m_reader)
+        if (!m_reader)
         {
             return;
         }
@@ -83,7 +83,6 @@ void Controller::startPause()
 
         if (m_state == State::Running)
         {
-            setWordsCount(data.totalCount);
             setProgress(data.totalProgress);
             setWordsPerSec(data.wordsPerSec);
         }
@@ -122,7 +121,6 @@ void Controller::stop()
 
     setError({});
     setProgress(0);
-    setWordsCount(0);
     setState(State::Stopped);
 
     m_model.reset();
@@ -157,15 +155,6 @@ void Controller::setProgress(float value)
     {
         m_progress = value;
         emit progressChanged();
-    }
-}
-
-void Controller::setWordsCount(int value)
-{
-    if (m_wordsCount != value)
-    {
-        m_wordsCount = value;
-        emit wordsCountChanged();
     }
 }
 

@@ -23,6 +23,11 @@ bool ReadNextWord(QTextStream& stream, QString& result)
     }
     while(result.isEmpty());
 
+    result.removeIf([](const QChar& ch)
+    {
+        return !ch.isPrint();
+    });
+
     result = result.toLower();
 
     return true;
@@ -82,19 +87,18 @@ void Reader::start(const QString& filePath)
 
     for (ReaderData data; ReadNextWord(stream, data.word) && m_active;)
     {
-        if (data.word.isEmpty())
+        if (data.word.isEmpty() || !data.word.isValidUtf16())
         {
             continue;
         }
 
         {
             QMutexLocker lock(&m_dataMutex);
-
             data.count = ++m_words[data.word];
-            data.totalCount = m_words.size();
-            data.wordsPerSec = (++totalWords * 1000) / qMax(1, timer.elapsed());
-            data.totalProgress = float(totalBytes - file.bytesAvailable()) / totalBytes;
         }
+
+        data.wordsPerSec = (++totalWords * 1000) / qMax(1, timer.elapsed());
+        data.totalProgress = float(totalBytes - file.bytesAvailable()) / totalBytes;
 
         m_semaphore.acquire();
         emit dataChanged(data);

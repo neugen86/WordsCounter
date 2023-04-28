@@ -22,7 +22,7 @@ Model::Model(QObject* parent)
     reset();
 }
 
-QHash<int,QByteArray> Model::roleNames() const
+QHash<int, QByteArray> Model::roleNames() const
 {
     return {
         { Roles::Word, "word" },
