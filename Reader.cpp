@@ -95,6 +95,7 @@ void Reader::start(const QString& filePath)
         {
             QMutexLocker lock(&m_dataMutex);
             data.count = ++m_words[data.word];
+            data.totalWordsCount = m_words.size();
         }
 
         data.wordsPerSec = (++totalWords * 1000) / qMax(1, timer.elapsed());

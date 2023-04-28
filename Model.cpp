@@ -11,7 +11,7 @@ enum Roles
 };
 
 const float cMinPerc = 0.1;
-const int cDefaultCount = 15;
+const int cDefaultSize = 15;
 
 } // anonymous namespace
 
@@ -61,15 +61,15 @@ QVariant Model::data(const QModelIndex& index, int role) const
     }
 }
 
-void Model::setMaxCount(int value)
+void Model::setMaxSize(int value)
 {
-    if (value < 1 || m_maxCount == value)
+    if (value < 1 || m_maxSize == value)
     {
         return;
     }
 
-    m_maxCount = value;
-    emit maxCountChanged();
+    m_maxSize = value;
+    emit maxSizeChanged();
 
     if (m_items.isEmpty())
     {
@@ -100,7 +100,7 @@ void Model::setMaxCount(int value)
     rescale();
 }
 
-void Model::handle(const QString& word, int count)
+void Model::update(const QString& word, int count)
 {
     if (count < 1 || word.isEmpty())
     {
@@ -112,10 +112,10 @@ void Model::handle(const QString& word, int count)
     if (row < 0)
     {
         if (m_items.isEmpty() ||
-            m_items.size() < m_maxCount ||
+            m_items.size() < m_maxSize ||
             count > m_items.last().count)
         {
-            if (m_items.size() == m_maxCount)
+            if (m_items.size() == m_maxSize)
             {
                 const int lastRow = m_items.size() - 1;
 
@@ -201,5 +201,5 @@ void Model::reset()
     m_rows.clear();
     endResetModel();
 
-    setMaxCount(cDefaultCount);
+    setMaxSize(cDefaultSize);
 }

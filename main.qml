@@ -95,23 +95,23 @@ Window {
                 to: 100
                 stepSize: 1
 
-                value: controller.model.maxCount
+                value: controller.model.maxSize
                 enabled: to > 0
 
                 onMoved: {
                     Qt.callLater(function() {
-                        controller.model.maxCount = value
+                        controller.model.maxSize = value
                     })
                 }
 
                 Component.onCompleted: {
-                    from = controller.model.maxCount
+                    from = controller.model.maxSize
                 }
             }
 
             Text {
                 rightPadding: 4
-                text: `${controller.model.maxCount} / ${slider.to}`
+                text: `${controller.model.maxSize} / ${slider.to}`
             }
         }
 
@@ -131,6 +131,7 @@ Window {
                 }
 
                 clip: true
+
                 model: controller.model
 
                 readonly property int spacing: 4
@@ -215,6 +216,18 @@ Window {
 
                 text: `${Math.round(progress.position * 100)}%`
                 visible: progress.position > 0
+            }
+
+            Text {
+                anchors {
+                    left: parent.left
+                    verticalCenter: parent.verticalCenter
+                }
+
+                leftPadding: 8
+
+                text: `${controller.wordsCount} unique`
+                visible: controller.wordsCount > 0
             }
 
             Text {

@@ -14,12 +14,21 @@ Controller::Controller(QObject* parent)
             return;
         }
 
-        QHash<QString, int> words = m_reader->words();
+        const QHash<QString, int> words = m_reader->words();
 
         QHash<QString, int>::const_iterator it;
-        for (it = words.cbegin(); it != words.cend(); ++it)
+        for (it = words.cbegin(); it != words.cend() && !m_model.isFull(); ++it)
         {
-            m_model.handle(it.key(), it.value());
+            const QString& word = it.key();
+
+            if (!m_model.contains(word))
+            {
+                QMetaObject::invokeMethod(this, [this, word, count=it.value()]()
+                {
+                    m_model.update(word, count);
+                },
+                Qt::QueuedConnection);
+            }
         }
     });
 }
@@ -84,12 +93,13 @@ void Controller::startPause()
         if (m_state == State::Running)
         {
             setProgress(data.totalProgress);
+            setWordsCount(data.totalWordsCount);
             setWordsPerSec(data.wordsPerSec);
         }
 
         if (!m_terminated)
         {
-            m_model.handle(data.word, data.count);
+            m_model.update(data.word, data.count);
         }
     });
 
@@ -121,6 +131,7 @@ void Controller::stop()
 
     setError({});
     setProgress(0);
+    setWordsCount(0);
     setState(State::Stopped);
 
     m_model.reset();
@@ -155,6 +166,15 @@ void Controller::setProgress(float value)
     {
         m_progress = value;
         emit progressChanged();
+    }
+}
+
+void Controller::setWordsCount(int value)
+{
+    if (m_wordsCount != value)
+    {
+        m_wordsCount = value;
+        emit wordsCountChanged();
     }
 }
 

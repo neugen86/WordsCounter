@@ -20,6 +20,7 @@ class Controller : public QObject
     Q_PROPERTY(State state READ state NOTIFY stateChanged)
     Q_PROPERTY(QString error READ error NOTIFY errorChanged)
     Q_PROPERTY(float progress READ progress NOTIFY progressChanged)
+    Q_PROPERTY(int wordsCount READ wordsCount NOTIFY wordsCountChanged)
     Q_PROPERTY(int wordsPerSec READ wordsPerSec NOTIFY wordsPerSecChanged)
 
 public:
@@ -42,6 +43,7 @@ public:
     State state() const { return m_state; }
     QString error() const { return m_error; }
     float progress() const { return m_progress; }
+    int wordsCount() const { return m_wordsCount; }
     int wordsPerSec() const { return m_wordsPerSec; }
 
     Q_INVOKABLE void startPause();
@@ -51,11 +53,13 @@ private:
     void setState(State value);
     void setError(QString value);
     void setProgress(float value);
+    void setWordsCount(int value);
     void setWordsPerSec(int value);
 
 private:
     QString m_error;
     float m_progress{0};
+    int m_wordsCount{0};
     int m_wordsPerSec{0};
 
     QUrl m_file;
@@ -71,5 +75,6 @@ signals:
     void stateChanged();
     void errorChanged();
     void progressChanged();
+    void wordsCountChanged();
     void wordsPerSecChanged();
 };

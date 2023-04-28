@@ -14,6 +14,7 @@ struct ReaderData
     int count{0};
     int wordsPerSec{0};
     float totalProgress{0};
+    int totalWordsCount{0};
 };
 
 
