@@ -21,6 +21,8 @@ class Model : public QAbstractListModel
         int count = 0;
     };
 
+    Q_PROPERTY(int maxCount READ maxCount WRITE setMaxCount NOTIFY maxCountChanged)
+
 public:
     explicit Model(QObject* parent = nullptr);
 
@@ -28,14 +30,23 @@ public:
     int rowCount(const QModelIndex& parent = QModelIndex()) const override;
     QVariant data(const QModelIndex& index, int role = Qt::DisplayRole) const override;
 
-    void reset();
+    int maxCount() const { return m_maxCount; }
+    void setMaxCount(int value);
+
     void handle(const QString& word, int count);
+    void reset();
 
 private:
-    int tryUpdate(const QString& word, int count);
+    void sort(int row);
+    void rescale();
+
+signals:
+    void maxCountChanged();
+    void needMoreWords();
 
 private:
     float m_ratio{1};
+    int m_maxCount{0};
     QList<Item> m_items;
     QHash<QString, int> m_rows;
 

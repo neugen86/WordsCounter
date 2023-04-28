@@ -7,17 +7,26 @@
 Controller::Controller(QObject* parent)
     : QObject(parent)
 {
+    connect(&m_model, &Model::needMoreWords, this, [this]()
+    {
+        if (m_reader)
+        {
+            return;
+        }
+
+        QHash<QString, int> words = m_reader->words();
+
+        QHash<QString, int>::const_iterator it;
+        for (it = words.cbegin(); it != words.cend(); ++it)
+        {
+            m_model.handle(it.key(), it.value());
+        }
+    });
 }
 
 Controller::~Controller()
 {
     stop();
-
-    if (m_thread)
-    {
-        m_thread->quit();
-        m_thread->wait();
-    }
 }
 
 QString Controller::file() const
@@ -55,63 +64,66 @@ void Controller::startPause()
     }
 
     stop();
+    m_terminated = false;
 
-    auto reader = new Reader;
-    auto thread = new QThread(this);
-    reader->moveToThread(thread);
+    m_reader = new Reader;
+    m_thread = new QThread(this);
+    m_reader->moveToThread(m_thread);
 
-    connect(thread, &QThread::started, reader, [this, reader]()
+    connect(m_thread, &QThread::started, m_reader, [this]()
     {
-        reader->start(m_file.toLocalFile());
+        m_reader->start(m_file.toLocalFile());
     });
 
-    connect(thread, &QThread::finished, this, [thread, reader]()
-    {
-        thread->deleteLater();
-        reader->deleteLater();
-    });
+    connect(m_thread, &QThread::finished, m_thread, &QThread::deleteLater);
 
-    connect(reader, &Reader::dataChanged, this, [this, reader](const ReaderData& data)
+    connect(m_reader, &Reader::dataChanged, this, [this](const ReaderData& data)
     {
-        reader->notifyDataReceived();
+        m_reader->notifyDataReceived();
 
         if (m_state == State::Running)
         {
+            setWordsCount(data.totalCount);
             setProgress(data.totalProgress);
             setWordsPerSec(data.wordsPerSec);
         }
 
-        if (m_state != State::Stopped)
+        if (!m_terminated)
         {
-            m_model.handle(data.word, data.wordCount);
+            m_model.handle(data.word, data.count);
         }
     });
 
-    connect(reader, &Reader::finished, this, [this, thread](const QString& error)
+    connect(m_reader, &Reader::finished, this, [this](const QString& error)
     {
         setError(error);
         setState(State::Stopped);
-        thread->quit();
     });
 
     setState(State::Running);
-
-    m_reader = reader;
-    m_thread = thread;
 
     m_thread->start();
 }
 
 void Controller::stop()
 {
-    setError({});
-    setProgress(0.);
-    setState(State::Stopped);
+    m_terminated = true;
 
     if (m_reader)
     {
         m_reader->stop();
     }
+
+    if (m_thread)
+    {
+        m_thread->quit();
+        m_thread->wait();
+    }
+
+    setError({});
+    setProgress(0);
+    setWordsCount(0);
+    setState(State::Stopped);
 
     m_model.reset();
 }
@@ -145,6 +157,15 @@ void Controller::setProgress(float value)
     {
         m_progress = value;
         emit progressChanged();
+    }
+}
+
+void Controller::setWordsCount(int value)
+{
+    if (m_wordsCount != value)
+    {
+        m_wordsCount = value;
+        emit wordsCountChanged();
     }
 }
 

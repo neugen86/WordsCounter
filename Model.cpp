@@ -2,8 +2,8 @@
 
 namespace
 {
-const int cMaxCount = 15;
 const float cMinPerc = 0.1;
+const int cDefaultCount = 15;
 
 } // anonymous namespace
 
@@ -11,6 +11,7 @@ const float cMinPerc = 0.1;
 Model::Model(QObject* parent)
     : QAbstractListModel(parent)
 {
+    reset();
 }
 
 QHash<int,QByteArray> Model::roleNames() const
@@ -52,56 +53,50 @@ QVariant Model::data(const QModelIndex& index, int role) const
     }
 }
 
-void Model::reset()
+void Model::setMaxCount(int value)
 {
-    beginResetModel();
-    m_items.clear();
-    m_rows.clear();
-    endResetModel();
-}
-
-void Model::handle(const QString& word, int count)
-{
-    int row = tryUpdate(word, count);
-
-    if (row < 0)
+    if (value < 1 || m_maxCount == value)
     {
         return;
     }
 
-    for (const int prevRow = row; row > 0; --row)
-    {
-        Item& cur = m_items[row];
-        Item& prev = m_items[row-1];
+    m_maxCount = value;
+    emit maxCountChanged();
 
-        if (cur.count > prev.count)
-        {
-            m_items.swapItemsAt(row, row-1);
-            std::swap(m_rows[cur.word], m_rows[prev.word]);
-        }
-        else
-        {
-            if (row != prevRow)
-            {
-                beginMoveRows({}, prevRow, prevRow, {}, row);
-                endMoveRows();
-            }
-            break;
-        }
+    if (m_items.isEmpty())
+    {
+        return;
     }
 
-    m_ratio = (1. - cMinPerc) / m_items.first().count;
+    const int curSize = m_items.size();
 
-    const auto first = QAbstractListModel::index(0);
-    const auto last = QAbstractListModel::index(m_items.size()-1);
-    emit dataChanged(first, last, { Roles::Percent });
+    if (value >= curSize)
+    {
+        if (value > curSize)
+        {
+            emit needMoreWords();
+        }
+        return;
+    }
+
+    beginRemoveRows({}, value, curSize - 1);
+
+    m_rows.removeIf([value](const std::pair<QString, int>& it)
+    {
+        return it.second >= value;
+    });
+    m_items.remove(value, curSize - value);
+
+    endRemoveRows();
+
+    rescale();
 }
 
-int Model::tryUpdate(const QString& word, int count)
+void Model::handle(const QString& word, int count)
 {
-    if (count < 1)
+    if (count < 1 || word.isEmpty())
     {
-        return -1;
+        return;
     }
 
     int row = m_rows.value(word, -1);
@@ -109,10 +104,10 @@ int Model::tryUpdate(const QString& word, int count)
     if (row < 0)
     {
         if (m_items.isEmpty() ||
-            m_items.size() < cMaxCount ||
+            m_items.size() < m_maxCount ||
             count > m_items.last().count)
         {
-            if (m_items.size() == cMaxCount)
+            if (m_items.size() == m_maxCount)
             {
                 const int lastRow = m_items.size() - 1;
 
@@ -128,8 +123,10 @@ int Model::tryUpdate(const QString& word, int count)
             m_items.append({ word, count });
             m_rows[word] = row;
             endInsertRows();
-
-            return row;
+        }
+        else
+        {
+            return;
         }
     }
     else
@@ -142,10 +139,59 @@ int Model::tryUpdate(const QString& word, int count)
 
             const auto index = QAbstractListModel::index(row);
             emit dataChanged(index, index, { Roles::Count });
-
-            return row;
+        }
+        else
+        {
+            return;
         }
     }
 
-    return -1;
+    sort(row);
+    rescale();
+}
+
+void Model::sort(int row)
+{
+    const int prevRow = row;
+
+    for (; row > 0; --row)
+    {
+        Item& cur = m_items[row];
+        Item& prev = m_items[row-1];
+
+        if (cur.count > prev.count)
+        {
+            m_items.swapItemsAt(row, row-1);
+            std::swap(m_rows[cur.word], m_rows[prev.word]);
+        }
+        else
+        {
+            break;
+        }
+    }
+
+    if (row != prevRow)
+    {
+        beginMoveRows({}, prevRow, prevRow, {}, row);
+        endMoveRows();
+    }
+}
+
+void Model::rescale()
+{
+    m_ratio = (1. - cMinPerc) / m_items.first().count;
+
+    const auto first = QAbstractListModel::index(0);
+    const auto last = QAbstractListModel::index(m_items.size()-1);
+    emit dataChanged(first, last, { Roles::Percent });
+}
+
+void Model::reset()
+{
+    beginResetModel();
+    m_items.clear();
+    m_rows.clear();
+    endResetModel();
+
+    setMaxCount(cDefaultCount);
 }

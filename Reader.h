@@ -11,29 +11,32 @@
 struct ReaderData
 {
     QString word;
-    int wordCount = 0;
-    int wordsPerSec = 0;
-    float totalProgress = 0;
+    int count{0};
+    int totalCount{0};
+    int wordsPerSec{0};
+    float totalProgress{0};
 
 };
-Q_DECLARE_METATYPE(ReaderData)
 
 
 class Reader : public QObject
 {
     Q_OBJECT
 
-    QMutex m_mutex;
-    QWaitCondition m_cond;
+    QMutex m_dataMutex;
+    QMutex m_pauseMutex;
     QSemaphore m_semaphore{1};
+    QWaitCondition m_resumeCond;
     QHash<QString, int> m_words;
     QAtomicInteger<bool> m_active{false};
+    QAtomicInteger<bool> m_paused{false};
 
 public:
     explicit Reader(QObject* parent = nullptr);
     ~Reader() override;
 
     void notifyDataReceived();
+    QHash<QString, int> words();
 
     void start(const QString& filePath);
     void pause();

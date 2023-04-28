@@ -2,6 +2,7 @@
 
 #include <QFile>
 #include <QTextStream>
+#include <QMutexLocker>
 #include <QElapsedTimer>
 
 namespace
@@ -13,13 +14,18 @@ bool ReadNextWord(QTextStream& stream, QString& result)
 {
     do
     {
+        if (stream.atEnd())
+        {
+            return false;
+        }
+
         stream >> result;
     }
-    while(result.isEmpty() && !stream.atEnd());
+    while(result.isEmpty());
 
     result = result.toLower();
 
-    return !result.isEmpty();
+    return true;
 }
 } // anonymous namespace
 
@@ -39,6 +45,12 @@ void Reader::notifyDataReceived()
     m_semaphore.release();
 }
 
+QHash<QString, int> Reader::words()
+{
+    QMutexLocker lock(&m_dataMutex);
+    return m_words;
+}
+
 void Reader::start(const QString& filePath)
 {
     if (m_active)
@@ -54,8 +66,11 @@ void Reader::start(const QString& filePath)
         return;
     }
 
-    m_mutex.lock();
     m_active = true;
+    m_paused = false;
+
+    m_semaphore.release();
+    m_pauseMutex.tryLock();
 
     QElapsedTimer timer;
     timer.start();
@@ -67,39 +82,50 @@ void Reader::start(const QString& filePath)
 
     for (ReaderData data; ReadNextWord(stream, data.word) && m_active;)
     {
-        data.wordCount = ++m_words[data.word];
-        data.wordsPerSec = (++totalWords * 1000) / qMax(1, timer.elapsed());
-        data.totalProgress = float(totalBytes - file.bytesAvailable()) / totalBytes;
+        if (data.word.isEmpty())
+        {
+            continue;
+        }
+
+        {
+            QMutexLocker lock(&m_dataMutex);
+
+            data.count = ++m_words[data.word];
+            data.totalCount = m_words.size();
+            data.wordsPerSec = (++totalWords * 1000) / qMax(1, timer.elapsed());
+            data.totalProgress = float(totalBytes - file.bytesAvailable()) / totalBytes;
+        }
 
         m_semaphore.acquire();
         emit dataChanged(data);
 
-        if (m_mutex.tryLock())
+        if (m_pauseMutex.tryLock())
         {
-            m_cond.wait(&m_mutex);
+            m_resumeCond.wait(&m_pauseMutex);
+            m_paused = false;
 
             timer.restart();
             totalWords = 0;
         }
     }
 
-    m_active = false;
-    m_mutex.unlock();
-
     emit finished(file.error() != QFile::NoError ? file.errorString() : QLatin1String());
+
+    m_active = false;
 }
 
 void Reader::pause()
 {
-    if (!m_mutex.tryLock())
+    if (!m_paused)
     {
-        m_mutex.unlock();
+        m_paused = true;
+        m_pauseMutex.unlock();
     }
 }
 
 void Reader::resume()
 {
-    m_cond.notify_one();
+    m_resumeCond.wakeOne();
 }
 
 void Reader::stop()

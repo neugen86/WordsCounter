@@ -7,7 +7,7 @@ import WordsCounter 1.0
 
 Window {
     width: 600
-    height: 600
+    height: 610
     visible: true
     minimumWidth: 300
     minimumHeight: 300
@@ -30,7 +30,10 @@ Window {
     }
 
     ColumnLayout {
-        anchors.fill: parent
+        anchors {
+            fill: parent
+            margins: 4
+        }
 
         RowLayout {
             TextField {
@@ -78,6 +81,35 @@ Window {
                 elide: Text.ElideMiddle
                 text: controller.error
                 color: "red"
+            }
+        }
+
+        RowLayout {
+            Layout.fillWidth: true
+
+            Slider {
+                Layout.fillWidth: true
+
+                to: controller.wordsCount
+                stepSize: 1
+
+                value: controller.model.maxCount
+                enabled: to > 0
+
+                onMoved: {
+                    Qt.callLater(function() {
+                        controller.model.maxCount = value
+                    })
+                }
+
+                Component.onCompleted: {
+                    from = controller.model.maxCount
+                }
+            }
+
+            Text {
+                rightPadding: 4
+                text: `${controller.model.maxCount} / ${controller.wordsCount}`
             }
         }
 
