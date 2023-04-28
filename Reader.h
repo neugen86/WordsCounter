@@ -17,18 +17,9 @@ struct ReaderData
     int totalWordsCount{0};
 };
 
-
 class Reader : public QObject
 {
     Q_OBJECT
-
-    QMutex m_dataMutex;
-    QMutex m_pauseMutex;
-    QSemaphore m_semaphore{1};
-    QWaitCondition m_resumeCond;
-    QHash<QString, int> m_words;
-    QAtomicInteger<bool> m_active{false};
-    QAtomicInteger<bool> m_paused{false};
 
 public:
     explicit Reader(QObject* parent = nullptr);
@@ -45,4 +36,13 @@ public:
 signals:
     void dataChanged(const ReaderData& data);
     void finished(const QString& error = {});
+
+private:
+    QMutex m_dataMutex;
+    QMutex m_pauseMutex;
+    QSemaphore m_semaphore{1};
+    QWaitCondition m_resumeCond;
+    QHash<QString, int> m_words;
+    QAtomicInteger<bool> m_active{false};
+    QAtomicInteger<bool> m_paused{false};
 };
