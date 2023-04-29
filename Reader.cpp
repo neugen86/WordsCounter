@@ -7,8 +7,8 @@
 
 namespace
 {
-const int cReaderProgressId =
-        qRegisterMetaType<ReaderData>("ReaderData");
+const int cReaderDataId =
+        qRegisterMetaType<Reader::Data>("ReaderData");
 
 bool ReadNextWord(QTextStream& stream, QString& result)
 {
@@ -85,7 +85,7 @@ void Reader::start(const QString& filePath)
     qint64 totalWords = 0;
     const auto totalBytes = file.size();
 
-    for (ReaderData data; ReadNextWord(stream, data.word) && m_active;)
+    for (Data data; ReadNextWord(stream, data.word) && m_active;)
     {
         if (data.word.isEmpty() || !data.word.isValidUtf16())
         {

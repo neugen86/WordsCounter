@@ -57,12 +57,12 @@ private:
     void setWordsPerSec(int value);
 
 signals:
-    void fileChanged();
-    void stateChanged();
-    void errorChanged();
-    void progressChanged();
-    void wordsCountChanged();
-    void wordsPerSecChanged();
+    void fileChanged(QPrivateSignal = {});
+    void stateChanged(QPrivateSignal = {});
+    void errorChanged(QPrivateSignal = {});
+    void progressChanged(QPrivateSignal = {});
+    void wordsCountChanged(QPrivateSignal = {});
+    void wordsPerSecChanged(QPrivateSignal = {});
 
 private:
     QString m_error;

@@ -86,7 +86,7 @@ void Controller::startPause()
 
     connect(m_thread, &QThread::finished, m_thread, &QThread::deleteLater);
 
-    connect(m_reader, &Reader::dataChanged, this, [this](const ReaderData& data)
+    connect(m_reader, &Reader::dataChanged, this, [this](const Reader::Data& data)
     {
         m_reader->notifyDataReceived();
 

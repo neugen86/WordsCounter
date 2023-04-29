@@ -1,6 +1,5 @@
 #pragma once
 
-#include <QHash>
 #include <QAbstractListModel>
 
 class Model : public QAbstractListModel
@@ -30,8 +29,8 @@ private:
     void rescale();
 
 signals:
-    void maxSizeChanged();
-    void needMoreWords();
+    void maxSizeChanged(QPrivateSignal = {});
+    void needMoreWords(QPrivateSignal = {});
 
 private:
     struct Item

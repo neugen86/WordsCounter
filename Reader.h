@@ -8,20 +8,20 @@
 #include <QSemaphore>
 #include <QWaitCondition>
 
-struct ReaderData
-{
-    QString word;
-    int count{0};
-    int wordsPerSec{0};
-    float totalProgress{0};
-    int totalWordsCount{0};
-};
-
 class Reader : public QObject
 {
     Q_OBJECT
 
 public:
+    struct Data
+    {
+        QString word;
+        int count{0};
+        int wordsPerSec{0};
+        float totalProgress{0};
+        int totalWordsCount{0};
+    };
+
     explicit Reader(QObject* parent = nullptr);
     ~Reader() override;
 
@@ -34,8 +34,8 @@ public:
     void stop();
 
 signals:
-    void dataChanged(const ReaderData& data);
-    void finished(const QString& error = {});
+    void dataChanged(const Reader::Data& data, QPrivateSignal = {});
+    void finished(const QString& error, QPrivateSignal = {});
 
 private:
     QMutex m_dataMutex;
