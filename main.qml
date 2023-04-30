@@ -6,11 +6,11 @@ import QtQuick.Controls
 import WordsCounter 1.0
 
 Window {
-    width: 600
-    height: 600
+    width: 500
+    height: 610
     visible: true
-    minimumWidth: 300
-    minimumHeight: 300
+    minimumWidth: 500
+    minimumHeight: 400
     title: qsTr("WordsCounter")
 
     Controller {
@@ -94,6 +94,10 @@ Window {
                 }
             }
 
+            Item {
+                implicitWidth: 30
+            }
+
             ComboBox {
                 model: ListModel {
                     ListElement {
@@ -132,7 +136,7 @@ Window {
             Slider {
                 id: slider
 
-                implicitWidth: 350
+                implicitWidth: 400
 
                 to: 100
                 stepSize: 1
@@ -141,9 +145,7 @@ Window {
                 enabled: to > 0
 
                 onMoved: {
-                    Qt.callLater(function() {
-                        controller.model.maxSize = value
-                    })
+                    controller.model.maxSize = value
                 }
 
                 Component.onCompleted: {
@@ -173,22 +175,25 @@ Window {
                 clip: true
                 model: controller.model
 
-                topMargin: 2
-                bottomMargin: topMargin
-
                 rotation: flipped ? 270 : 0
 
                 boundsBehavior: Flickable.StopAtBounds
+                boundsMovement: Flickable.StopAtBounds
+
+                topMargin: 2
+                bottomMargin: topMargin
+
+                contentWidth: width - scroll.visibleWidth
 
                 width: (flipped ? parent.height : parent.width) - 2
                 height: (flipped ? parent.width : parent.height) - 2
 
                 delegate: RowDelegate {
+                    maxWidth: list.contentWidth
+
                     word: roleHtmlWord
                     count: roleCount
                     percent: rolePercent
-
-                    maxWidth: list.width - (scroll.visible ? scroll.width : 0)
                 }
 
                 add: Transition {
@@ -209,6 +214,9 @@ Window {
 
                 ScrollBar.vertical: ScrollBar {
                     id: scroll
+
+                    readonly property int visibleWidth:
+                        visible ? width : 0
                 }
             }
         }
@@ -269,7 +277,7 @@ Window {
 
         Behavior on percent { PropertyAnimation {} }
 
-        width: maxWidth * percent
+        width: Math.max(5, maxWidth * percent)
         height: content.height + spacing
 
         Rectangle {

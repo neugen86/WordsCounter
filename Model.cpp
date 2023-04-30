@@ -12,7 +12,7 @@ enum Roles
     Percent
 };
 
-const float cMinPerc = 0.1;
+const float cMinPerc = 0.0;
 const int cDefaultSize = 15;
 
 } // anonymous namespace
@@ -56,7 +56,7 @@ QVariant Model::data(const QModelIndex& index, int role) const
         return item.count;
 
     case Roles::Percent:
-        return cMinPerc + m_ratio * item.count;
+        return m_ratio * item.count;
 
     default:
         return {};
