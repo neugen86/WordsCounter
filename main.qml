@@ -180,8 +180,8 @@ Window {
 
                 boundsBehavior: Flickable.StopAtBounds
 
-                width: flipped ? parent.height : parent.width
-                height: flipped ? parent.width : parent.height
+                width: (flipped ? parent.height : parent.width) - 2
+                height: (flipped ? parent.width : parent.height) - 2
 
                 delegate: RowDelegate {
                     word: roleHtmlWord
