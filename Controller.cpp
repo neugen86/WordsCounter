@@ -35,7 +35,7 @@ Controller::Controller(QObject* parent)
 
 Controller::~Controller()
 {
-    stop();
+    cancel();
 }
 
 QString Controller::file() const
@@ -50,7 +50,7 @@ void Controller::setFile(const QString& filePath)
         m_file = filePath;
         emit fileChanged();
 
-        stop();
+        cancel();
     }
 }
 
@@ -72,8 +72,8 @@ void Controller::startPause()
         break;
     }
 
-    stop();
-    m_terminated = false;
+    cancel();
+    m_cancelled = false;
 
     m_reader = new Reader;
     m_thread = new QThread(this);
@@ -97,7 +97,7 @@ void Controller::startPause()
             setWordsPerSec(data.wordsPerSec);
         }
 
-        if (!m_terminated)
+        if (!m_cancelled)
         {
             m_model.update(data.word, data.count);
         }
@@ -114,9 +114,9 @@ void Controller::startPause()
     m_thread->start();
 }
 
-void Controller::stop()
+void Controller::cancel()
 {
-    m_terminated = true;
+    m_cancelled = true;
 
     if (m_reader)
     {

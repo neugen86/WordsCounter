@@ -47,7 +47,7 @@ public:
     int wordsPerSec() const { return m_wordsPerSec; }
 
     Q_INVOKABLE void startPause();
-    Q_INVOKABLE void stop();
+    Q_INVOKABLE void cancel();
 
 private:
     void setState(State value);
@@ -75,6 +75,6 @@ private:
     QPointer<Reader> m_reader;
     QPointer<QThread> m_thread;
 
-    bool m_terminated{false};
+    bool m_cancelled{false};
     State m_state{State::Stopped};
 };

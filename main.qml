@@ -86,11 +86,11 @@ Window {
             Button {
                 implicitWidth: 100
 
-                text: "Stop"
+                text: "Cancel"
                 enabled: controller.state !== Controller.Stopped
 
                 onClicked: {
-                    controller.stop()
+                    controller.cancel()
                 }
             }
 
