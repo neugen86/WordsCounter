@@ -72,7 +72,6 @@ void Reader::start(const QString& filePath)
     }
 
     m_active = true;
-    m_paused = false;
 
     m_semaphore.release();
     m_pauseMutex.tryLock();
@@ -107,7 +106,6 @@ void Reader::start(const QString& filePath)
         if (m_pauseMutex.tryLock())
         {
             m_resumeCond.wait(&m_pauseMutex);
-            m_paused = false;
 
             timer.restart();
             totalWords = 0;
@@ -121,9 +119,8 @@ void Reader::start(const QString& filePath)
 
 void Reader::pause()
 {
-    if (!m_paused)
+    if (!m_pauseMutex.tryLock())
     {
-        m_paused = true;
         m_pauseMutex.unlock();
     }
 }
