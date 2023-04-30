@@ -7,7 +7,7 @@ import WordsCounter 1.0
 
 Window {
     width: 600
-    height: 610
+    height: 600
     visible: true
     minimumWidth: 300
     minimumHeight: 300
@@ -36,6 +36,8 @@ Window {
         }
 
         RowLayout {
+            Layout.fillWidth: true
+
             TextField {
                 enabled: false
                 text: controller.file
@@ -48,16 +50,33 @@ Window {
                     dialog.open()
                 }
             }
+
+            Text {
+                Layout.fillWidth: true
+
+                text: controller.error
+                elide: Text.ElideMiddle
+
+                color: "red"
+            }
         }
 
         RowLayout {
-            Layout.fillWidth: true
-
             Button {
                 implicitWidth: 100
 
-                text: controller.state !== Controller.Running ? "Start" : "Pause"
                 enabled: controller.file.length > 0
+
+                text: {
+                    switch (controller.state) {
+                    case Controller.Running:
+                        return "Pause"
+                    case Controller.Paused:
+                        return "Continue"
+                    default:
+                        return "Start"
+                    }
+                }
 
                 onClicked: {
                     controller.startPause()
@@ -75,22 +94,45 @@ Window {
                 }
             }
 
-            Text {
-                Layout.fillWidth: true
+            ComboBox {
+                model: ListModel {
+                    ListElement {
+                        text: "Ascending"
+                        value: Qt.AscendingOrder
+                    }
+                    ListElement {
+                        text: "Descending"
+                        value: Qt.DescendingOrder
+                    }
+                }
 
-                elide: Text.ElideMiddle
-                text: controller.error
-                color: "red"
+                textRole: "text"
+                valueRole: "value"
+
+                currentIndex: {
+                    controller.model.viewOrder === Qt.AscendingOrder ? 0 : 1
+                }
+
+                onCurrentValueChanged: {
+                    controller.model.viewOrder = currentValue
+                }
+            }
+
+            CheckBox {
+                text: "Flipped"
+                checked: list.flipped
+
+                onCheckedChanged: {
+                    list.flipped = checked
+                }
             }
         }
 
         RowLayout {
-            Layout.fillWidth: true
-
             Slider {
                 id: slider
 
-                Layout.fillWidth: true
+                implicitWidth: 350
 
                 to: 100
                 stepSize: 1
@@ -110,7 +152,6 @@ Window {
             }
 
             Text {
-                rightPadding: 4
                 text: `${controller.model.maxSize} / ${slider.to}`
             }
         }
@@ -125,65 +166,33 @@ Window {
             ListView {
                 id: list
 
-                anchors {
-                    fill: parent
-                    margins: 1
-                }
+                property bool flipped: false
+
+                anchors.centerIn: parent
 
                 clip: true
-
                 model: controller.model
 
-                readonly property int spacing: 4
-                readonly property int padding: 4
+                topMargin: 2
+                bottomMargin: topMargin
 
-                readonly property variant colors: [
-                    "azure", "beige", "bisque", "khaki", "pink", "plum", "skyblue"
-                ]
+                rotation: flipped ? 270 : 0
 
-                readonly property int availableWidth: width - (scroll.visible ? scroll.width : 0)
+                boundsBehavior: Flickable.StopAtBounds
 
-                delegate: Item {
-                    width: list.availableWidth * animatedPercent
-                    height: stripe.height + list.spacing
+                width: flipped ? parent.height : parent.width
+                height: flipped ? parent.width : parent.height
 
-                    property real animatedPercent: percent
-                    Behavior on animatedPercent { PropertyAnimation {} }
+                delegate: RowDelegate {
+                    word: roleHtmlWord
+                    count: roleCount
+                    percent: rolePercent
 
-                    Rectangle {
-                        id: stripe
-
-                        anchors {
-                            bottom: parent.bottom
-                            horizontalCenter: parent.horizontalCenter
-                        }
-
-                        width: parent.width - 2 * list.padding
-                        height: label.height
-
-                        border {
-                            width: 1
-                            color: "gray"
-                        }
-
-                        color: list.colors[Math.floor(list.colors.length * Math.random())]
-
-                        Text {
-                            id: label
-
-                            anchors.verticalCenter: parent.verticalCenter
-
-                            padding: 6
-                            width: list.availableWidth - 2 * list.padding
-
-                            elide: Text.ElideMiddle
-                            text: `<b>${htmlWord}</b> (${count})`
-                        }
-                    }
+                    maxWidth: list.width - (scroll.visible ? scroll.width : 0)
                 }
 
                 add: Transition {
-                    NumberAnimation { properties: "x"; from: -list.width/4 }
+                    NumberAnimation { properties: "x"; from: -list.width / 4 }
                 }
 
                 remove: Transition {
@@ -240,6 +249,54 @@ Window {
 
                 text: `${controller.wordsPerSec} words/sec.`
                 visible: controller.wordsPerSec > 0
+            }
+        }
+    }
+
+    component RowDelegate: Item {
+        property int maxWidth
+
+        property string word
+        property int count
+        property real percent
+
+        readonly property int spacing: 4
+        readonly property int padding: 4
+
+        readonly property variant colors: [
+            "azure", "beige", "bisque", "khaki", "pink", "plum", "skyblue"
+        ]
+
+        Behavior on percent { PropertyAnimation {} }
+
+        width: maxWidth * percent
+        height: content.height + spacing
+
+        Rectangle {
+            id: content
+
+            anchors.centerIn: parent
+
+            width: parent.width - 2 * padding
+            height: label.height
+
+            border {
+                width: 1
+                color: "gray"
+            }
+
+            color: colors[Math.floor(colors.length * Math.random())]
+
+            Text {
+                id: label
+
+                anchors.verticalCenter: parent.verticalCenter
+
+                padding: 6
+                width: maxWidth - 2 * padding
+
+                elide: Text.ElideMiddle
+                text: `<b>${word}</b> (${count})`
             }
         }
     }

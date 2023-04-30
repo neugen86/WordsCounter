@@ -1,5 +1,7 @@
 #include "Model.h"
 
+#include <functional>
+
 namespace
 {
 enum Roles
@@ -19,16 +21,16 @@ const int cDefaultSize = 15;
 Model::Model(QObject* parent)
     : QAbstractListModel(parent)
 {
-    reset();
+    setMaxSize(cDefaultSize);
 }
 
 QHash<int, QByteArray> Model::roleNames() const
 {
     return {
-        { Roles::Word, "word" },
-        { Roles::HtmlWord, "htmlWord" },
-        { Roles::Count, "count" },
-        { Roles::Percent, "percent" },
+        { Roles::Word, "roleWord" },
+        { Roles::HtmlWord, "roleHtmlWord" },
+        { Roles::Count, "roleCount" },
+        { Roles::Percent, "rolePercent" },
     };
 }
 
@@ -61,6 +63,21 @@ QVariant Model::data(const QModelIndex& index, int role) const
     }
 }
 
+void Model::setViewOrder(int value)
+{
+    if (m_order == value)
+    {
+        return;
+    }
+
+    beginResetModel();
+    std::reverse(m_items.begin(), m_items.end());
+    endResetModel();
+
+    m_order = Qt::SortOrder(value);
+    emit viewOrderChanged();
+}
+
 void Model::setMaxSize(int value)
 {
     if (value < 1 || m_maxSize == value)
@@ -77,27 +94,38 @@ void Model::setMaxSize(int value)
     }
 
     const int curSize = m_items.size();
+    const int diff = curSize - value;
 
-    if (value >= curSize)
+    if (diff <= 0)
     {
-        if (value > curSize)
-        {
-            emit needMoreWords();
-        }
+        emit needMoreWords();
         return;
     }
 
-    beginRemoveRows({}, value, curSize - 1);
+    const int removeFrom = isAsc() ? 0 : value;
+    const int removeTo = (isAsc() ? diff : curSize) - 1;
 
-    m_rows.removeIf([value](const std::pair<QString, int>& it)
-    {
-        return it.second >= value;
-    });
-    m_items.remove(value, curSize - value);
-
+    beginRemoveRows({}, removeFrom, removeTo);
+    m_items.remove(removeFrom, diff);
     endRemoveRows();
 
     rescale();
+}
+
+int Model::find(const QString& word) const
+{
+    auto it = std::find_if(m_items.cbegin(), m_items.cend(),
+                           [&word](const auto& item)
+    {
+        return item.word == word;
+    });
+
+    if (it != m_items.cend())
+    {
+        return std::distance(m_items.cbegin(), it);
+    }
+
+    return -1;
 }
 
 void Model::update(const QString& word, int count)
@@ -107,87 +135,81 @@ void Model::update(const QString& word, int count)
         return;
     }
 
-    int row = m_rows.value(word, -1);
+    int row = find(word);
 
-    if (row < 0)
+    if (row != -1)
     {
-        if (m_items.isEmpty() ||
-            m_items.size() < m_maxSize ||
-            count > m_items.last().count)
-        {
-            if (m_items.size() == m_maxSize)
-            {
-                const int lastRow = m_items.size() - 1;
+        m_items[row].count = count;
 
-                beginRemoveRows({}, lastRow, lastRow);
-                m_rows.remove(m_items.last().word);
-                m_items.removeLast();
-                endRemoveRows();
-            }
-
-            row = m_items.size();
-
-            beginInsertRows({}, row, row);
-            m_items.append({ count, word });
-            m_rows[word] = row;
-            endInsertRows();
-        }
-        else
-        {
-            return;
-        }
+        const auto index = QAbstractListModel::index(row);
+        emit dataChanged(index, index, { Roles::Count });
     }
     else
     {
-        Item& item = m_items[row];
+        int minCount = 0;
 
-        if (item.count < count)
+        if (!m_items.isEmpty())
         {
-            item.count = count;
-
-            const auto index = QAbstractListModel::index(row);
-            emit dataChanged(index, index, { Roles::Count });
+            minCount = isAsc() ? m_items.first().count
+                               : m_items.last().count;
         }
-        else
+
+        if (count > minCount || m_items.size() < m_maxSize)
         {
-            return;
+            if (m_items.size() == m_maxSize)
+            {
+                const int index = isAsc() ? 0 : (m_items.size() - 1);
+
+                beginRemoveRows({}, index, index);
+                m_items.remove(index);
+                endRemoveRows();
+            }
+
+            row = isAsc() ? 0 : m_items.size();
+
+            beginInsertRows({}, row, row);
+            m_items.insert(row, { count, word });
+            endInsertRows();
         }
     }
 
-    sort(row);
-    rescale();
+    if (row != -1)
+    {
+        move(row);
+        rescale();
+    }
 }
 
-void Model::sort(int row)
+void Model::move(int row)
 {
-    const int prevRow = row;
+    const QString word = m_items[row].word;
 
-    for (; row > 0; --row)
+    std::sort(m_items.begin(), m_items.end(),
+              [this](const auto& lhv, const auto& rhv)
     {
-        Item& cur = m_items[row];
-        Item& prev = m_items[row-1];
+        return isAsc() ? (lhv.count < rhv.count) : (lhv.count > rhv.count);
+    });
 
-        if (cur.count > prev.count)
-        {
-            m_items.swapItemsAt(row, row-1);
-            std::swap(m_rows[cur.word], m_rows[prev.word]);
-        }
-        else
-        {
-            break;
-        }
+    int newRow = find(word);
+
+    if (newRow > row)
+    {
+        ++newRow;
     }
 
-    if (row != prevRow)
+    if (row != newRow)
     {
-        beginMoveRows({}, prevRow, prevRow, {}, row);
+        beginMoveRows({}, row, row, {}, newRow);
         endMoveRows();
     }
 }
 
 void Model::rescale()
 {
-    m_ratio = (1. - cMinPerc) / m_items.first().count;
+    const int maxCount = isAsc() ? m_items.last().count
+                                 : m_items.first().count;
+
+    m_ratio = (1. - cMinPerc) / maxCount;
 
     const auto first = QAbstractListModel::index(0);
     const auto last = QAbstractListModel::index(m_items.size()-1);
@@ -198,8 +220,5 @@ void Model::reset()
 {
     beginResetModel();
     m_items.clear();
-    m_rows.clear();
     endResetModel();
-
-    setMaxSize(cDefaultSize);
 }

@@ -16,12 +16,12 @@ Controller::Controller(QObject* parent)
 
         const QHash<QString, int> words = m_reader->words();
 
-        QHash<QString, int>::const_iterator it;
-        for (it = words.cbegin(); it != words.cend() && !m_model.isFull(); ++it)
+        for (QHash<QString, int>::const_iterator it = words.cbegin();
+             !m_model.isFull() && it != words.cend(); ++it)
         {
             const QString& word = it.key();
 
-            if (!m_model.contains(word))
+            if (m_model.find(word) == -1)
             {
                 QMetaObject::invokeMethod(this, [this, word, count=it.value()]()
                 {
