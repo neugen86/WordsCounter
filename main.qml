@@ -44,7 +44,7 @@ Window {
             }
 
             Button {
-                text: "Select File"
+                text: dialog.title
 
                 onClicked: {
                     dialog.open()
@@ -162,8 +162,10 @@ Window {
             Layout.fillWidth: true
             Layout.fillHeight: true
 
-            border.width: 1
-            border.color: "gray"
+            border {
+                width: 1
+                color: "gray"
+            }
 
             ListView {
                 id: list
