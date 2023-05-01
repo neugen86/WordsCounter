@@ -10,7 +10,7 @@ Window {
     height: 610
     visible: true
     minimumWidth: 500
-    minimumHeight: 400
+    minimumHeight: 610
     title: qsTr("WordsCounter")
 
     Controller {
