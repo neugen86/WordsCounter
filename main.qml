@@ -262,6 +262,8 @@ Window {
     }
 
     component RowDelegate: Item {
+        id: delegate
+
         property int maxWidth
 
         property string word
@@ -277,7 +279,7 @@ Window {
 
         Behavior on percent { PropertyAnimation {} }
 
-        width: Math.max(5, maxWidth * percent)
+        width: maxWidth * percent
         height: content.height + spacing
 
         Rectangle {
@@ -285,7 +287,9 @@ Window {
 
             anchors.centerIn: parent
 
-            width: parent.width - 2 * padding
+            width: Math.max(parent.width - 2 * padding,
+                            2 * border.width + 3)
+
             height: label.height
 
             border {
@@ -301,7 +305,7 @@ Window {
                 anchors.verticalCenter: parent.verticalCenter
 
                 padding: 6
-                width: maxWidth - 2 * padding
+                width: maxWidth - 2 * delegate.padding
 
                 elide: Text.ElideMiddle
                 text: `<b>${word}</b> (${count})`

@@ -10,6 +10,37 @@ namespace
 const int cReaderDataId =
         qRegisterMetaType<Reader::Data>("ReaderData");
 
+void FilterChars(QString& value)
+{
+    value.removeIf([](const QChar& ch)
+    {
+        return !ch.isPrint();
+    });
+
+    auto isSuitable = [](const QChar& ch)
+    {
+        return ch.isLetterOrNumber();
+    };
+
+    auto frontIt = std::find_if(value.cbegin(), value.cend(), isSuitable);
+    const int left = std::distance(value.cbegin(), frontIt);
+
+    if (frontIt == value.cend())
+    {
+        value.clear();
+        return;
+    }
+
+    auto backIt = std::find_if(value.crbegin(), value.crend(), isSuitable);
+    const int right = backIt != value.crend() ? std::distance(value.crbegin(), backIt) : 0;
+
+    if (left || right)
+    {
+        const int count = value.length() - left - right;
+        value = value.sliced(left, count);
+    }
+}
+
 bool ReadNextWord(QTextStream& stream, QString& result)
 {
     do
@@ -23,11 +54,7 @@ bool ReadNextWord(QTextStream& stream, QString& result)
     }
     while(result.isEmpty());
 
-    result.removeIf([](const QChar& ch)
-    {
-        return !ch.isPrint();
-    });
-
+    FilterChars(result);
     result = result.toLower();
 
     return true;
