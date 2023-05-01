@@ -70,12 +70,12 @@ void Model::setViewOrder(int value)
         return;
     }
 
+    m_order = Qt::SortOrder(value);
+    emit viewOrderChanged();
+
     beginResetModel();
     std::reverse(m_items.begin(), m_items.end());
     endResetModel();
-
-    m_order = Qt::SortOrder(value);
-    emit viewOrderChanged();
 }
 
 void Model::setMaxSize(int value)
@@ -98,7 +98,10 @@ void Model::setMaxSize(int value)
 
     if (diff <= 0)
     {
-        emit needMoreWords();
+        if (diff != 0)
+        {
+            emit needMoreWords();
+        }
         return;
     }
 
@@ -109,10 +112,10 @@ void Model::setMaxSize(int value)
     m_items.remove(removeFrom, diff);
     endRemoveRows();
 
-    rescale();
+    notifyPercentChanged();
 }
 
-int Model::find(const QString& word) const
+int Model::indexOf(const QString& word) const
 {
     auto it = std::find_if(m_items.cbegin(), m_items.cend(),
                            [&word](const auto& item)
@@ -135,14 +138,14 @@ void Model::update(const QString& word, int count)
         return;
     }
 
-    int row = find(word);
+    int index = indexOf(word);
 
-    if (row != -1)
+    if (index != -1)
     {
-        m_items[row].count = count;
+        m_items[index].count = count;
 
-        const auto index = QAbstractListModel::index(row);
-        emit dataChanged(index, index, { Roles::Count });
+        const auto modelIdx = QAbstractListModel::index(index);
+        emit dataChanged(modelIdx, modelIdx, { Roles::Count });
     }
     else
     {
@@ -158,62 +161,67 @@ void Model::update(const QString& word, int count)
         {
             if (m_items.size() == m_maxSize)
             {
-                const int index = isAsc() ? 0 : (m_items.size() - 1);
+                const int removeAt = isAsc() ? 0 : (m_items.size() - 1);
 
-                beginRemoveRows({}, index, index);
-                m_items.remove(index);
+                beginRemoveRows({}, removeAt, removeAt);
+                m_items.remove(removeAt);
                 endRemoveRows();
             }
 
-            row = isAsc() ? 0 : m_items.size();
+            index = isAsc() ? 0 : m_items.size();
 
-            beginInsertRows({}, row, row);
-            m_items.insert(row, { count, word });
+            beginInsertRows({}, index, index);
+            m_items.insert(index, { count, word });
             endInsertRows();
         }
     }
 
-    if (row != -1)
+    if (index != -1)
     {
-        move(row);
-        rescale();
+        sort(index);
+        notifyPercentChanged();
     }
 }
 
-void Model::move(int row)
+void Model::sort(int changedIndex)
 {
-    const QString word = m_items[row].word;
+    const QString word = m_items[changedIndex].word;
 
     std::sort(m_items.begin(), m_items.end(),
               [this](const auto& lhv, const auto& rhv)
     {
-        return isAsc() ? (lhv.count < rhv.count) : (lhv.count > rhv.count);
+        return isAsc() ? (lhv.count < rhv.count)
+                       : (lhv.count > rhv.count);
     });
 
-    int newRow = find(word);
+    int newIndex = indexOf(word);
+    Q_ASSERT(newIndex != -1);
 
-    if (newRow > row)
+    if (changedIndex == newIndex)
     {
-        ++newRow;
+        return;
     }
 
-    if (row != newRow)
+    if (newIndex > changedIndex)
     {
-        beginMoveRows({}, row, row, {}, newRow);
-        endMoveRows();
+        ++newIndex;
     }
+
+    beginMoveRows({}, changedIndex, changedIndex,
+                  {}, newIndex);
+    endMoveRows();
 }
 
-void Model::rescale()
+void Model::notifyPercentChanged()
 {
     const int maxCount = isAsc() ? m_items.last().count
                                  : m_items.first().count;
 
     m_ratio = (1. - cMinPerc) / maxCount;
 
-    const auto first = QAbstractListModel::index(0);
-    const auto last = QAbstractListModel::index(m_items.size()-1);
-    emit dataChanged(first, last, { Roles::Percent });
+    const auto firstIdx = QAbstractListModel::index(0);
+    const auto lastIdx = QAbstractListModel::index(m_items.size()-1);
+    emit dataChanged(firstIdx, lastIdx, { Roles::Percent });
 }
 
 void Model::reset()

@@ -22,7 +22,7 @@ public:
     void setViewOrder(int value);
     int viewOrder() const { return m_order; }
 
-    int find(const QString& word) const;
+    int indexOf(const QString& word) const;
     bool isFull() const { return m_items.size() >= m_maxSize; }
 
     void update(const QString& word, int count);
@@ -31,8 +31,8 @@ public:
 private:
     bool isAsc() const { return m_order == Qt::AscendingOrder; }
 
-    void move(int row);
-    void rescale();
+    void sort(int changedIndex);
+    void notifyPercentChanged();
 
 signals:
     void viewOrderChanged(QPrivateSignal = {});

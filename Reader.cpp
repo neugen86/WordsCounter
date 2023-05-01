@@ -112,7 +112,8 @@ void Reader::start(const QString& filePath)
         }
     }
 
-    emit finished(file.error() != QFile::NoError ? file.errorString() : QLatin1String());
+    const bool hasError = file.error() != QFile::NoError;
+    emit finished(hasError ? file.errorString() : QLatin1String());
 
     m_active = false;
 }

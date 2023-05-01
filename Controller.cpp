@@ -21,7 +21,7 @@ Controller::Controller(QObject* parent)
         {
             const QString& word = it.key();
 
-            if (m_model.find(word) == -1)
+            if (m_model.indexOf(word) == -1)
             {
                 QMetaObject::invokeMethod(this, [this, word, count=it.value()]()
                 {
@@ -79,14 +79,17 @@ void Controller::startPause()
     m_thread = new QThread(this);
     m_reader->moveToThread(m_thread);
 
-    connect(m_thread, &QThread::started, m_reader, [this]()
+    connect(m_thread, &QThread::started,
+            m_reader, [this]()
     {
         m_reader->start(m_file.toLocalFile());
     });
 
-    connect(m_thread, &QThread::finished, m_thread, &QThread::deleteLater);
+    connect(m_thread, &QThread::finished,
+            m_thread, &QThread::deleteLater);
 
-    connect(m_reader, &Reader::dataChanged, this, [this](const Reader::Data& data)
+    connect(m_reader, &Reader::dataChanged,
+            this, [this](const Reader::Data& data)
     {
         m_reader->notifyDataReceived();
 
@@ -103,7 +106,8 @@ void Controller::startPause()
         }
     });
 
-    connect(m_reader, &Reader::finished, this, [this](const QString& error)
+    connect(m_reader, &Reader::finished,
+            this, [this](const QString& error)
     {
         setError(error);
         setState(State::Stopped);
