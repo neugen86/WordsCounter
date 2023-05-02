@@ -123,6 +123,7 @@ void Controller::startStop()
 void Controller::cancel()
 {
     m_cancelled = true;
+    m_model.reset();
 
     if (m_reader)
     {
@@ -139,8 +140,6 @@ void Controller::cancel()
     setProgress(0);
     setWordsCount(0);
     setState(State::Idle);
-
-    m_model.reset();
 }
 
 void Controller::setState(State value)
