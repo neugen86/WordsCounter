@@ -15,6 +15,8 @@ Window {
 
     Controller {
         id: controller
+
+        property bool paused: false
     }
 
     FileDialog {
@@ -23,6 +25,19 @@ Window {
         title: "Choose file"
         options: FileDialog.ReadOnly
         fileMode: FileDialog.OpenFile
+
+        onVisibleChanged: {
+            if (visible) {
+                if (controller.state == Controller.Running) {
+                    controller.paused = true
+                    controller.startStop()
+                }
+            }
+            else if (controller.paused) {
+                controller.paused = false
+                controller.startStop()
+            }
+        }
 
         onAccepted: {
             controller.file = selectedFile
@@ -70,8 +85,8 @@ Window {
                 text: {
                     switch (controller.state) {
                     case Controller.Running:
-                        return "Pause"
-                    case Controller.Paused:
+                        return "Stop"
+                    case Controller.Stopped:
                         return "Continue"
                     default:
                         return "Start"
@@ -79,7 +94,7 @@ Window {
                 }
 
                 onClicked: {
-                    controller.startPause()
+                    controller.startStop()
                 }
             }
 
@@ -87,7 +102,7 @@ Window {
                 implicitWidth: 100
 
                 text: "Cancel"
-                enabled: controller.state !== Controller.Stopped
+                enabled: controller.state !== Controller.Idle
 
                 onClicked: {
                     controller.cancel()

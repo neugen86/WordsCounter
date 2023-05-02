@@ -26,8 +26,8 @@ class Controller : public QObject
 public:
     enum State
     {
+        Idle,
         Running,
-        Paused,
         Stopped
     };
     Q_ENUM(State)
@@ -46,7 +46,7 @@ public:
     int wordsCount() const { return m_wordsCount; }
     int wordsPerSec() const { return m_wordsPerSec; }
 
-    Q_INVOKABLE void startPause();
+    Q_INVOKABLE void startStop();
     Q_INVOKABLE void cancel();
 
 private:
@@ -76,5 +76,5 @@ private:
     QPointer<QThread> m_thread;
 
     bool m_cancelled{false};
-    State m_state{State::Stopped};
+    State m_state{State::Idle};
 };

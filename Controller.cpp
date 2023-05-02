@@ -31,6 +31,7 @@ Controller::Controller(QObject* parent)
             }
         }
     });
+    startStop();
 }
 
 Controller::~Controller()
@@ -54,22 +55,22 @@ void Controller::setFile(const QString& filePath)
     }
 }
 
-void Controller::startPause()
+void Controller::startStop()
 {
     switch (m_state)
     {
     case State::Running:
         m_reader->pause();
-        setState(State::Paused);
+        setState(State::Stopped);
         return;
 
-    case State::Paused:
+    case State::Stopped:
         m_reader->resume();
         setState(State::Running);
         return;
 
     default:
-        Q_ASSERT(m_state == State::Stopped);
+        Q_ASSERT(m_state == State::Idle);
         break;
     }
 
@@ -111,7 +112,7 @@ void Controller::startPause()
             this, [this](const QString& error)
     {
         setError(error);
-        setState(State::Stopped);
+        setState(State::Idle);
     });
 
     setState(State::Running);
@@ -137,7 +138,7 @@ void Controller::cancel()
     setError({});
     setProgress(0);
     setWordsCount(0);
-    setState(State::Stopped);
+    setState(State::Idle);
 
     m_model.reset();
 }
