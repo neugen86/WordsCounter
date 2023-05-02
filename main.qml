@@ -132,6 +132,7 @@ Window {
 
                 onCurrentValueChanged: {
                     controller.model.viewOrder = currentValue
+                    scroll.position = 0
                 }
             }
 
