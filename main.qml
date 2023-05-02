@@ -15,8 +15,6 @@ Window {
 
     Controller {
         id: controller
-
-        property bool paused: false
     }
 
     FileDialog {
@@ -26,15 +24,17 @@ Window {
         options: FileDialog.ReadOnly
         fileMode: FileDialog.OpenFile
 
+        property bool resumeAfterClose: false
+
         onVisibleChanged: {
             if (visible) {
                 if (controller.state == Controller.Running) {
-                    controller.paused = true
+                    resumeAfterClose = true
                     controller.startStop()
                 }
             }
-            else if (controller.paused) {
-                controller.paused = false
+            else if (resumeAfterClose) {
+                resumeAfterClose = false
                 controller.startStop()
             }
         }
