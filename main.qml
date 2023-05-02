@@ -6,11 +6,9 @@ import QtQuick.Controls
 import WordsCounter 1.0
 
 Window {
-    width: 500
-    height: 610
     visible: true
     minimumWidth: 500
-    minimumHeight: 610
+    minimumHeight: 615
     title: qsTr("WordsCounter")
 
     Controller {
@@ -184,25 +182,30 @@ Window {
 
                 property bool flipped: false
 
+                readonly property int indent: 2 * parent.border.width
+
                 anchors.centerIn: parent
+
+                spacing: 4
+                leftMargin: spacing
+                rightMargin: spacing
+                bottomMargin: spacing
+                topMargin: spacing
 
                 clip: true
                 model: controller.model
-
                 rotation: flipped ? 270 : 0
-
-                topMargin: 2
-                bottomMargin: topMargin
 
                 boundsMovement: Flickable.StopAtBounds
 
-                contentWidth: width - scroll.visibleWidth
+                contentWidth: width - scroll.visibleWidth - 2 * spacing
 
-                width: (flipped ? parent.height : parent.width) - 2
-                height: (flipped ? parent.width : parent.height) - 2
+                width: (flipped ? parent.height : parent.width) - indent
+                height: (flipped ? parent.width : parent.height) - indent
 
                 delegate: RowDelegate {
-                    maxWidth: list.contentWidth
+                    width: list.contentWidth
+
                     text: `<b>${roleHtmlWord}</b> (${roleCount})`
                     proportion: roleProportion
                 }
@@ -275,32 +278,21 @@ Window {
     component RowDelegate: Item {
         id: delegate
 
-        property int maxWidth
-
         property string text
         property real proportion
 
-        readonly property int spacing: 4
-        readonly property int padding: 4
+        Behavior on proportion { PropertyAnimation {} }
 
         readonly property variant colors: [
             "azure", "beige", "bisque", "khaki", "pink", "plum", "skyblue"
         ]
 
-        Behavior on proportion { PropertyAnimation {} }
-
-        width: maxWidth * proportion
-        height: content.height + spacing
+        implicitHeight: label.height
 
         Rectangle {
-            id: content
-
-            anchors.centerIn: parent
-
-            width: Math.max(parent.width - 2 * padding,
-                            2 * border.width + 3)
-
-            height: label.height
+            width: Math.max(parent.width * proportion,
+                            3 + 2 * border.width)
+            height: parent.height
 
             border {
                 width: 1
@@ -315,7 +307,7 @@ Window {
                 anchors.verticalCenter: parent.verticalCenter
 
                 padding: 6
-                width: maxWidth - 2 * delegate.padding
+                width: delegate.width
 
                 elide: Text.ElideMiddle
                 text: delegate.text

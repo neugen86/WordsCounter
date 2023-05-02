@@ -119,6 +119,8 @@ void Reader::start(const QString& filePath)
 
     for (Data data; ReadNextWord(stream, data.word) && m_active;)
     {
+        Q_ASSERT(!data.word.trimmed().isEmpty());
+
         {
             QMutexLocker lock(&m_dataMutex);
             data.count = ++m_words[data.word];
