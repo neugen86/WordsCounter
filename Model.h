@@ -19,8 +19,8 @@ public:
     int maxSize() const { return m_maxSize; }
     void setMaxSize(int value);
 
-    void setViewOrder(int value);
     int viewOrder() const { return m_order; }
+    void setViewOrder(int value);
 
     int indexOf(const QString& word) const;
     bool isFull() const { return m_items.size() >= m_maxSize; }
@@ -32,7 +32,7 @@ private:
     bool isAsc() const { return m_order == Qt::AscendingOrder; }
 
     void sort(int changedIndex);
-    void notifyPercentChanged();
+    void updateProportions();
 
 signals:
     void viewOrderChanged(QPrivateSignal = {});

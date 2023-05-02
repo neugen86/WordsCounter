@@ -44,4 +44,5 @@ private:
     QWaitCondition m_resumeCond;
     QHash<QString, int> m_words;
     QAtomicInteger<bool> m_active{false};
+    QAtomicInteger<bool> m_paused{false};
 };

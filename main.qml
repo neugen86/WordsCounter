@@ -55,7 +55,7 @@ Window {
                 Layout.fillWidth: true
 
                 text: controller.error
-                elide: Text.ElideMiddle
+                elide: Text.ElideRight
 
                 color: "red"
             }
@@ -138,11 +138,7 @@ Window {
 
                 implicitWidth: 400
 
-                to: 100
-                stepSize: 1
-
                 value: controller.model.maxSize
-                enabled: to > 0
 
                 onMoved: {
                     controller.model.maxSize = value
@@ -150,6 +146,7 @@ Window {
 
                 Component.onCompleted: {
                     from = controller.model.maxSize
+                    to = Math.max(100, from)
                 }
             }
 
@@ -179,11 +176,10 @@ Window {
 
                 rotation: flipped ? 270 : 0
 
-                boundsBehavior: Flickable.StopAtBounds
-                boundsMovement: Flickable.StopAtBounds
-
                 topMargin: 2
                 bottomMargin: topMargin
+
+                boundsMovement: Flickable.StopAtBounds
 
                 contentWidth: width - scroll.visibleWidth
 
@@ -192,10 +188,8 @@ Window {
 
                 delegate: RowDelegate {
                     maxWidth: list.contentWidth
-
-                    word: roleHtmlWord
-                    count: roleCount
-                    percent: rolePercent
+                    text: `<b>${roleHtmlWord}</b> (${roleCount})`
+                    proportion: roleProportion
                 }
 
                 add: Transition {
@@ -268,9 +262,8 @@ Window {
 
         property int maxWidth
 
-        property string word
-        property int count
-        property real percent
+        property string text
+        property real proportion
 
         readonly property int spacing: 4
         readonly property int padding: 4
@@ -279,9 +272,9 @@ Window {
             "azure", "beige", "bisque", "khaki", "pink", "plum", "skyblue"
         ]
 
-        Behavior on percent { PropertyAnimation {} }
+        Behavior on proportion { PropertyAnimation {} }
 
-        width: maxWidth * percent
+        width: maxWidth * proportion
         height: content.height + spacing
 
         Rectangle {
@@ -310,7 +303,7 @@ Window {
                 width: maxWidth - 2 * delegate.padding
 
                 elide: Text.ElideMiddle
-                text: `<b>${word}</b> (${count})`
+                text: delegate.text
             }
         }
     }

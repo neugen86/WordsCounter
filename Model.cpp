@@ -9,7 +9,7 @@ enum Roles
     Word = Qt::UserRole,
     HtmlWord,
     Count,
-    Percent
+    Proportion
 };
 
 const float cMinPerc = 0.0;
@@ -30,7 +30,7 @@ QHash<int, QByteArray> Model::roleNames() const
         { Roles::Word, "roleWord" },
         { Roles::HtmlWord, "roleHtmlWord" },
         { Roles::Count, "roleCount" },
-        { Roles::Percent, "rolePercent" },
+        { Roles::Proportion, "roleProportion" },
     };
 }
 
@@ -55,7 +55,7 @@ QVariant Model::data(const QModelIndex& index, int role) const
     case Roles::Count:
         return item.count;
 
-    case Roles::Percent:
+    case Roles::Proportion:
         return m_ratio * item.count;
 
     default:
@@ -112,7 +112,7 @@ void Model::setMaxSize(int value)
     m_items.remove(removeFrom, diff);
     endRemoveRows();
 
-    notifyPercentChanged();
+    updateProportions();
 }
 
 int Model::indexOf(const QString& word) const
@@ -179,7 +179,7 @@ void Model::update(const QString& word, int count)
     if (index != -1)
     {
         sort(index);
-        notifyPercentChanged();
+        updateProportions();
     }
 }
 
@@ -212,7 +212,7 @@ void Model::sort(int changedIndex)
     endMoveRows();
 }
 
-void Model::notifyPercentChanged()
+void Model::updateProportions()
 {
     const int maxCount = isAsc() ? m_items.last().count
                                  : m_items.first().count;
@@ -221,7 +221,7 @@ void Model::notifyPercentChanged()
 
     const auto firstIdx = QAbstractListModel::index(0);
     const auto lastIdx = QAbstractListModel::index(m_items.size()-1);
-    emit dataChanged(firstIdx, lastIdx, { Roles::Percent });
+    emit dataChanged(firstIdx, lastIdx, { Roles::Proportion });
 }
 
 void Model::reset()

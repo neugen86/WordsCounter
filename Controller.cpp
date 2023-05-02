@@ -69,6 +69,7 @@ void Controller::startPause()
         return;
 
     default:
+        Q_ASSERT(m_state == State::Stopped);
         break;
     }
 

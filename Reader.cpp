@@ -36,8 +36,7 @@ void FilterChars(QString& value)
 
     if (left || right)
     {
-        const int count = value.length() - left - right;
-        value = value.sliced(left, count);
+        value = value.mid(left, value.length() - left - right);
     }
 }
 
@@ -55,6 +54,12 @@ bool ReadNextWord(QTextStream& stream, QString& result)
     while(result.isEmpty());
 
     FilterChars(result);
+
+    if (result.isEmpty())
+    {
+        return ReadNextWord(stream, result);
+    }
+
     result = result.toLower();
 
     return true;
@@ -99,6 +104,7 @@ void Reader::start(const QString& filePath)
     }
 
     m_active = true;
+    m_paused = false;
 
     m_semaphore.release();
     m_pauseMutex.tryLock();
@@ -108,24 +114,19 @@ void Reader::start(const QString& filePath)
 
     QTextStream stream(&file);
 
-    qint64 totalWords = 0;
-    const auto totalBytes = file.size();
+    qint64 processedWords = 0;
+    const float totalBytes = file.size();
 
     for (Data data; ReadNextWord(stream, data.word) && m_active;)
     {
-        if (data.word.isEmpty() || !data.word.isValidUtf16())
-        {
-            continue;
-        }
-
         {
             QMutexLocker lock(&m_dataMutex);
             data.count = ++m_words[data.word];
             data.totalWordsCount = m_words.size();
         }
 
-        data.wordsPerSec = (++totalWords * 1000) / qMax(1, timer.elapsed());
-        data.totalProgress = float(totalBytes - file.bytesAvailable()) / totalBytes;
+        data.wordsPerSec = (++processedWords * 1000) / qMax(1, timer.elapsed());
+        data.totalProgress = (totalBytes - file.bytesAvailable()) / totalBytes;
 
         m_semaphore.acquire();
         emit dataChanged(data);
@@ -133,9 +134,10 @@ void Reader::start(const QString& filePath)
         if (m_pauseMutex.tryLock())
         {
             m_resumeCond.wait(&m_pauseMutex);
+            m_paused = false;
 
+            processedWords = 0;
             timer.restart();
-            totalWords = 0;
         }
     }
 
@@ -147,8 +149,14 @@ void Reader::start(const QString& filePath)
 
 void Reader::pause()
 {
+    if (m_paused)
+    {
+        return;
+    }
+
     if (!m_pauseMutex.tryLock())
     {
+        m_paused = true;
         m_pauseMutex.unlock();
     }
 }
@@ -161,7 +169,6 @@ void Reader::resume()
 void Reader::stop()
 {
     m_active = false;
-    m_semaphore.release();
-
+    notifyDataReceived();
     resume();
 }
