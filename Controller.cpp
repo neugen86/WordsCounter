@@ -93,6 +93,11 @@ void Controller::startStop()
     connect(m_reader, &Reader::dataChanged,
             this, [this](const Reader::Data& data)
     {
+        if (m_cancelled || !m_reader)
+        {
+            return;
+        }
+
         m_reader->notifyDataReceived();
 
         if (m_state == State::Running)
@@ -102,10 +107,7 @@ void Controller::startStop()
             setWordsPerSec(data.wordsPerSec);
         }
 
-        if (!m_cancelled)
-        {
-            m_model.update(data.word, data.count);
-        }
+        m_model.update(data.word, data.count);
     });
 
     connect(m_reader, &Reader::finished,
@@ -123,17 +125,26 @@ void Controller::startStop()
 void Controller::cancel()
 {
     m_cancelled = true;
+
     m_model.reset();
+
+    setError({});
+    setProgress(0);
+    setWordsCount(0);
+    setState(State::Idle);
 
     if (m_reader)
     {
         m_reader->stop();
+        m_reader->deleteLater();
+        m_reader = nullptr;
     }
 
     if (m_thread)
     {
         m_thread->quit();
         m_thread->wait();
+        m_thread = nullptr;
     }
 
     setError({});

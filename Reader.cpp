@@ -146,6 +146,7 @@ void Reader::start(const QString& filePath)
     const bool hasError = file.error() != QFile::NoError;
     emit finished(hasError ? file.errorString() : QLatin1String());
 
+    m_pauseMutex.unlock();
     m_active = false;
 }
 
