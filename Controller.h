@@ -50,6 +50,8 @@ public:
     Q_INVOKABLE void cancel();
 
 private:
+    void loadMoreWords();
+
     void setState(State value);
     void setError(QString value);
     void setProgress(float value);

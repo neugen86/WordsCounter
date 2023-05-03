@@ -135,6 +135,8 @@ void Reader::start(const QString& filePath)
 
         if (m_pauseMutex.tryLock())
         {
+            emit paused();
+
             m_resumeCond.wait(&m_pauseMutex);
             m_paused = false;
 

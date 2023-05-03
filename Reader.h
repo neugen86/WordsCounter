@@ -28,6 +28,8 @@ public:
     void notifyDataReceived();
     QHash<QString, int> words();
 
+    bool isPaused() const { return m_paused; }
+
     void start(const QString& filePath);
     void pause();
     void resume();
@@ -36,6 +38,7 @@ public:
 signals:
     void dataChanged(const Reader::Data& data, QPrivateSignal = {});
     void finished(const QString& error, QPrivateSignal = {});
+    void paused();
 
 private:
     QMutex m_dataMutex;

@@ -9,26 +9,23 @@ Controller::Controller(QObject* parent)
 {
     connect(&m_model, &Model::needMoreWords, this, [this]()
     {
-        if (!m_reader)
+        if (m_state == State::Running)
         {
-            return;
-        }
+            auto ctx = new QObject;
 
-        const QHash<QString, int> words = m_reader->words();
-
-        for (QHash<QString, int>::const_iterator it = words.cbegin();
-             !m_model.isFull() && it != words.cend(); ++it)
-        {
-            const QString& word = it.key();
-
-            if (m_model.indexOf(word) == -1)
+            connect(m_reader, &Reader::paused, ctx, [this, ctx]()
             {
-                QMetaObject::invokeMethod(this, [this, word, count=it.value()]()
-                {
-                    m_model.update(word, count);
-                },
-                Qt::QueuedConnection);
-            }
+                ctx->deleteLater();
+
+                loadMoreWords();
+                m_reader->resume();
+            });
+
+            m_reader->pause();
+        }
+        else if (m_reader)
+        {
+            loadMoreWords();
         }
     });
     startStop();
@@ -98,6 +95,7 @@ void Controller::startStop()
         }
 
         m_reader->notifyDataReceived();
+        m_model.update(data.word, data.count);
 
         if (m_state == State::Running)
         {
@@ -105,8 +103,6 @@ void Controller::startStop()
             setWordsCount(data.totalWordsCount);
             setWordsPerSec(data.wordsPerSec);
         }
-
-        m_model.update(data.word, data.count);
     });
 
     connect(m_reader, &Reader::finished,
@@ -143,6 +139,24 @@ void Controller::cancel()
         m_thread->quit();
         m_thread->wait();
         m_thread = nullptr;
+    }
+}
+
+void Controller::loadMoreWords()
+{
+    Q_ASSERT(m_reader && m_reader->isPaused());
+
+    const QHash<QString, int> words = m_reader->words();
+
+    for (QHash<QString, int>::const_iterator it = words.cbegin();
+         !m_model.isFull() && it != words.cend(); ++it)
+    {
+        const QString& word = it.key();
+
+        if (m_model.indexOf(word) == -1)
+        {
+            m_model.update(word, it.value());
+        }
     }
 }
 
