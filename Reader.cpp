@@ -117,7 +117,7 @@ void Reader::start(const QString& filePath)
     qint64 processedWords = 0;
     const float totalBytes = file.size();
 
-    for (Data data; ReadNextWord(stream, data.word) && m_active;)
+    for (Data data; ReadNextWord(stream, data.word);)
     {
         Q_ASSERT(!data.word.trimmed().isEmpty());
 
@@ -130,8 +130,15 @@ void Reader::start(const QString& filePath)
         data.wordsPerSec = (++processedWords * 1000) / qMax(1, timer.elapsed());
         data.totalProgress = (totalBytes - file.bytesAvailable()) / totalBytes;
 
-        m_semaphore.acquire();
-        emit dataChanged(data);
+        if (m_active)
+        {
+            m_semaphore.acquire();
+            emit dataChanged(data);
+        }
+        else
+        {
+            break;
+        }
 
         if (m_pauseMutex.tryLock())
         {

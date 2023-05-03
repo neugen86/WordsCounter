@@ -9,24 +9,25 @@ Controller::Controller(QObject* parent)
 {
     connect(&m_model, &Model::needMoreWords, this, [this]()
     {
-        if (m_state == State::Running)
+        if (!m_reader || m_reader->isPaused())
         {
-            auto ctx = new QObject;
-
-            connect(m_reader, &Reader::paused, ctx, [this, ctx]()
+            if (m_reader)
             {
-                ctx->deleteLater();
-
                 loadMoreWords();
-                m_reader->resume();
-            });
+            }
+            return;
+        }
 
-            m_reader->pause();
-        }
-        else if (m_reader)
+        auto ctx = new QObject;
+        connect(m_reader, &Reader::paused, ctx, [this, ctx]()
         {
+            ctx->deleteLater();
+
             loadMoreWords();
-        }
+            m_reader->resume();
+        });
+
+        m_reader->pause();
     });
     startStop();
 }
