@@ -26,7 +26,7 @@ Window {
 
         onVisibleChanged: {
             if (visible) {
-                if (controller.state == Controller.Running) {
+                if (controller.state === Controller.Running) {
                     resumeAfterClose = true
                     controller.startStop()
                 }
@@ -153,6 +153,7 @@ Window {
                 implicitWidth: 400
 
                 value: controller.model.maxSize
+                enabled: from < to
 
                 onMoved: {
                     controller.model.maxSize = value
