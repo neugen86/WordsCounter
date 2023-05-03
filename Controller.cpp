@@ -81,14 +81,13 @@ void Controller::startStop()
     m_thread = new QThread(this);
     m_reader->moveToThread(m_thread);
 
-    connect(m_thread, &QThread::started,
-            m_reader, [this]()
+    connect(m_thread, &QThread::started, m_reader, [this]()
     {
         m_reader->start(m_file.toLocalFile());
     });
 
-    connect(m_thread, &QThread::finished,
-            m_thread, &QThread::deleteLater);
+    connect(m_thread, &QThread::finished, m_reader, &QObject::deleteLater);
+    connect(m_thread, &QThread::finished, m_thread, &QObject::deleteLater);
 
     connect(m_reader, &Reader::dataChanged,
             this, [this](const Reader::Data& data)
@@ -136,7 +135,6 @@ void Controller::cancel()
     if (m_reader)
     {
         m_reader->stop();
-        m_reader->deleteLater();
         m_reader = nullptr;
     }
 
@@ -146,11 +144,6 @@ void Controller::cancel()
         m_thread->wait();
         m_thread = nullptr;
     }
-
-    setError({});
-    setProgress(0);
-    setWordsCount(0);
-    setState(State::Idle);
 }
 
 void Controller::setState(State value)
