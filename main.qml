@@ -215,9 +215,7 @@ Window {
                     NumberAnimation { properties: "x"; from: -list.width / 4 }
                 }
 
-                remove: Transition {
-                    NumberAnimation { properties: "opacity"; to: 0 }
-                }
+                remove: Transition { OpacityAnimator { to: 0 } }
 
                 move: Transition {
                     NumberAnimation { properties: "y" }
@@ -253,10 +251,9 @@ Window {
             Text {
                 anchors {
                     left: parent.left
+                    leftMargin: 8
                     verticalCenter: parent.verticalCenter
                 }
-
-                leftPadding: 8
 
                 text: `${controller.wordsCount} unique`
                 visible: controller.wordsCount > 0
@@ -265,10 +262,9 @@ Window {
             Text {
                 anchors {
                     right: parent.right
+                    rightMargin: 8
                     verticalCenter: parent.verticalCenter
                 }
-
-                rightPadding: 8
 
                 text: `${controller.wordsPerSec} words/sec.`
                 visible: controller.wordsPerSec > 0
@@ -282,8 +278,6 @@ Window {
         property string text
         property real proportion
 
-        Behavior on proportion { PropertyAnimation {} }
-
         readonly property variant colors: [
             "azure", "beige", "bisque", "khaki", "pink", "plum", "skyblue"
         ]
@@ -291,6 +285,8 @@ Window {
         implicitHeight: label.height
 
         Rectangle {
+            Behavior on width { PropertyAnimation {} }
+
             width: Math.max(parent.width * proportion,
                             3 + 2 * border.width)
             height: parent.height
@@ -310,8 +306,8 @@ Window {
                 padding: 6
                 width: delegate.width
 
-                elide: Text.ElideMiddle
                 text: delegate.text
+                elide: Text.ElideMiddle
             }
         }
     }
