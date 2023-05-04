@@ -8,11 +8,18 @@ import WordsCounter 1.0
 Window {
     visible: true
     minimumWidth: 500
-    minimumHeight: 615
+    minimumHeight: 630
     title: qsTr("WordsCounter")
+
+    property bool sortedByModel: false
+    readonly property int defaultSortOrder: Qt.DescendingOrder
 
     Controller {
         id: controller
+
+        Component.onCompleted: {
+            model.sortOrder = defaultSortOrder
+        }
     }
 
     FileDialog {
@@ -43,6 +50,8 @@ Window {
     }
 
     ColumnLayout {
+        id: mainLayout
+
         anchors {
             fill: parent
             margins: 4
@@ -111,37 +120,65 @@ Window {
                 implicitWidth: 30
             }
 
-            ComboBox {
-                model: ListModel {
-                    ListElement {
-                        text: "Ascending"
-                        value: Qt.AscendingOrder
+            RowLayout {
+                spacing: 20
+
+                Column {
+                    spacing: mainLayout.spacing
+
+                    CheckBox {
+                        text: "Sort by model"
+                        checked: sortedByModel
+
+                        onCheckedChanged: {
+                            sortedByModel = checked
+                            controller.model.sortOrder = defaultSortOrder
+                            list.verticalLayoutDirection = ListView.TopToBottom
+                        }
                     }
-                    ListElement {
-                        text: "Descending"
-                        value: Qt.DescendingOrder
+
+                    ComboBox {
+                        model: ListModel {
+                            ListElement {
+                                text: "Ascending"
+                                value: Qt.AscendingOrder
+                            }
+                            ListElement {
+                                text: "Descending"
+                                value: Qt.DescendingOrder
+                            }
+                        }
+
+                        textRole: "text"
+                        valueRole: "value"
+
+                        currentIndex: {
+                            controller.model.sortOrder === Qt.AscendingOrder ? 0 : 1
+                        }
+
+                        onCurrentValueChanged: {
+                            if (sortedByModel) {
+                                controller.model.sortOrder = currentValue
+                            }
+                            else {
+                                const sameAsModel = currentValue === controller.model.sortOrder
+
+                                list.verticalLayoutDirection = sameAsModel ? ListView.TopToBottom
+                                                                           : ListView.BottomToTop
+                            }
+
+                            scroll.position = 0
+                        }
                     }
                 }
 
-                textRole: "text"
-                valueRole: "value"
+                CheckBox {
+                    text: "Flipped"
+                    checked: list.flipped
 
-                currentIndex: {
-                    controller.model.viewOrder === Qt.AscendingOrder ? 0 : 1
-                }
-
-                onCurrentValueChanged: {
-                    controller.model.viewOrder = currentValue
-                    scroll.position = 0
-                }
-            }
-
-            CheckBox {
-                text: "Flipped"
-                checked: list.flipped
-
-                onCheckedChanged: {
-                    list.flipped = checked
+                    onCheckedChanged: {
+                        list.flipped = checked
+                    }
                 }
             }
         }

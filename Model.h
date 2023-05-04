@@ -7,7 +7,7 @@ class Model : public QAbstractListModel
     Q_OBJECT
 
     Q_PROPERTY(int maxSize READ maxSize WRITE setMaxSize NOTIFY maxSizeChanged)
-    Q_PROPERTY(int viewOrder READ viewOrder WRITE setViewOrder NOTIFY viewOrderChanged)
+    Q_PROPERTY(int sortOrder READ sortOrder WRITE setSortOrder NOTIFY sortOrderChanged)
 
 public:
     explicit Model(QObject* parent = nullptr);
@@ -19,8 +19,8 @@ public:
     int maxSize() const { return m_maxSize; }
     void setMaxSize(int value);
 
-    int viewOrder() const { return m_order; }
-    void setViewOrder(int value);
+    int sortOrder() const { return m_order; }
+    void setSortOrder(int value);
 
     int indexOf(const QString& word) const;
     bool isFull() const { return m_items.size() >= m_maxSize; }
@@ -36,7 +36,7 @@ private:
     void updateProportions();
 
 signals:
-    void viewOrderChanged(QPrivateSignal = {});
+    void sortOrderChanged(QPrivateSignal = {});
     void maxSizeChanged(QPrivateSignal = {});
     void needMoreWords(QPrivateSignal = {});
 

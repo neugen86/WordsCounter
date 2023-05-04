@@ -63,19 +63,17 @@ QVariant Model::data(const QModelIndex& index, int role) const
     }
 }
 
-void Model::setViewOrder(int value)
+void Model::setSortOrder(int value)
 {
-    if (m_order == value)
+    if (m_order != value)
     {
-        return;
+        beginResetModel();
+        std::reverse(m_items.begin(), m_items.end());
+        endResetModel();
     }
 
     m_order = Qt::SortOrder(value);
-    emit viewOrderChanged();
-
-    beginResetModel();
-    std::reverse(m_items.begin(), m_items.end());
-    endResetModel();
+    emit sortOrderChanged();
 }
 
 void Model::setMaxSize(int value)
