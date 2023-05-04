@@ -88,31 +88,13 @@ void Model::setMaxSize(int value)
     m_maxSize = value;
     emit maxSizeChanged();
 
-    if (m_items.isEmpty())
+    if (m_items.size() < value)
     {
+        emit needMoreWords();
         return;
     }
 
-    const int curSize = m_items.size();
-    const int diff = curSize - value;
-
-    if (diff <= 0)
-    {
-        if (diff != 0)
-        {
-            emit needMoreWords();
-        }
-        return;
-    }
-
-    const int removeFrom = isAsc() ? 0 : value;
-    const int removeTo = (isAsc() ? diff : curSize) - 1;
-
-    beginRemoveRows({}, removeFrom, removeTo);
-    m_items.remove(removeFrom, diff);
-    endRemoveRows();
-
-    updateProportions();
+    removeExtraItems();
 }
 
 int Model::indexOf(const QString& word) const
@@ -159,15 +141,6 @@ void Model::update(const QString& word, int count)
 
         if (count > minCount || m_items.size() < m_maxSize)
         {
-            if (m_items.size() == m_maxSize)
-            {
-                const int removeAt = isAsc() ? 0 : (m_items.size() - 1);
-
-                beginRemoveRows({}, removeAt, removeAt);
-                m_items.remove(removeAt);
-                endRemoveRows();
-            }
-
             index = isAsc() ? 0 : m_items.size();
 
             beginInsertRows({}, index, index);
@@ -179,6 +152,7 @@ void Model::update(const QString& word, int count)
     if (index != -1)
     {
         sort(index);
+        removeExtraItems();
         updateProportions();
     }
 }
@@ -210,6 +184,24 @@ void Model::sort(int changedIndex)
     beginMoveRows({}, changedIndex, changedIndex,
                   {}, newIndex);
     endMoveRows();
+}
+
+void Model::removeExtraItems()
+{
+    const int curSize = m_items.size();
+    const int count = curSize - m_maxSize;
+
+    if (count < 1)
+    {
+        return;
+    }
+
+    const int removeFrom = isAsc() ? 0 : (curSize - count);
+    const int removeTo = (isAsc() ? count : curSize) - 1;
+
+    beginRemoveRows({}, removeFrom, removeTo);
+    m_items.remove(removeFrom, count);
+    endRemoveRows();
 }
 
 void Model::updateProportions()

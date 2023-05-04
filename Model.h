@@ -32,6 +32,7 @@ private:
     bool isAsc() const { return m_order == Qt::AscendingOrder; }
 
     void sort(int changedIndex);
+    void removeExtraItems();
     void updateProportions();
 
 signals:
